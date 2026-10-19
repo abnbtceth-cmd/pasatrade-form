@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>فرم ثبت حساب و فیش</title>
+<style>
+@font-face { font-family: "Vazirmatn"; src: url("fonts/Vazirmatn-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Vazirmatn"; src: url("fonts/Vazirmatn-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  --bg: #efeff4; --section: #ffffff; --text: #000000; --hint: #8e8e93; --accent: #2481cc;
+  --button: #2481cc; --button-text: #ffffff; --danger: #e5383b; --ok: #1f9d55; --warn: #b7791f;
+  --line: rgba(60, 60, 67, 0.14); --chip: rgba(118, 118, 128, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tg]) {
+    --bg: #000000; --section: #1c1c1e; --text: #ffffff; --hint: #8d8d93; --accent: #5aa7f0;
+    --button: #3e88d6; --line: rgba(84, 84, 88, 0.5); --chip: rgba(118, 118, 128, 0.24);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: "Vazirmatn", Tahoma, sans-serif; font-size: 16px; line-height: 1.6;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust: 100%;
+}
+.ltr { direction: ltr; unicode-bidi: isolate; }
+
+header { padding: 20px 20px 4px; }
+header h1 { margin: 0; font-size: 22px; line-height: 1.35; font-weight: 700; }
+header p { margin: 2px 0 0; color: var(--hint); font-size: 14px; }
+
+.section { background: var(--section); border-radius: 14px; margin: 14px 16px 0; padding: 12px 16px 14px; }
+.label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--hint); margin-bottom: 6px; }
+.label .opt { font-size: 12px; }
+input[type="text"] {
+  width: 100%; border: 0; outline: 0; background: transparent; color: var(--text);
+  font: inherit; font-size: 18px; padding: 6px 0; border-bottom: 1px solid var(--line);
+  border-radius: 0; transition: border-color 150ms ease;
+}
+input[type="text"]:focus { border-bottom-color: var(--accent); }
+input.num { direction: ltr; text-align: right; font-feature-settings: "tnum" 1; }
+input.amount { text-align: right; font-feature-settings: "tnum" 1; }
+input::placeholder { color: var(--hint); opacity: 0.7; }
+
+.status { min-height: 22px; font-size: 13px; margin-top: 6px; color: var(--hint); }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--danger); }
+.status.warn { color: var(--warn); }
+.preview { font-size: 14px; margin-top: 6px; }
+.preview b { font-size: 16px; }
+.words { color: var(--hint); font-size: 13px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip {
+  border: 0; font: inherit; font-size: 14px; color: var(--text); background: var(--chip);
+  padding: 7px 13px; border-radius: 999px; cursor: pointer;
+  transition: transform 100ms ease-out, background-color 150ms ease;
+}
+.chip.on { background: var(--button); color: var(--button-text); }
+.chip.accent { color: var(--accent); }
+.chip.on.accent { color: var(--button-text); }
+
+/* Account picker: radio cards */
+.accounts { display: flex; flex-direction: column; gap: 8px; }
+.acc {
+  display: flex; gap: 12px; align-items: center; width: 100%; text-align: right;
+  border: 1.5px solid var(--line); background: transparent; color: var(--text);
+  border-radius: 12px; padding: 10px 12px; font: inherit; cursor: pointer;
+  transition: transform 100ms ease-out, border-color 150ms ease, background-color 150ms ease;
+}
+.acc .dot { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); position: relative; }
+.acc.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.acc.on .dot { border-color: var(--accent); }
+.acc.on .dot::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+.acc .body { flex: 1; min-width: 0; }
+.acc .name { font-weight: 700; }
+.acc .meta { font-size: 13px; color: var(--hint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc .rem { font-size: 13px; }
+.other-name { margin-top: 10px; }
+
+/* Photo picker */
+.photo {
+  position: relative; display: grid; place-items: center; width: 100%; min-height: 132px;
+  border: 1.5px dashed var(--line); border-radius: 12px; background: transparent; color: var(--accent);
+  font: inherit; cursor: pointer; overflow: hidden; transition: transform 100ms ease-out;
+}
+.photo.has { border-style: solid; min-height: 0; }
+.photo img { display: block; width: 100%; max-height: 300px; object-fit: contain; background: var(--chip); }
+.photo .ph { display: grid; gap: 4px; justify-items: center; padding: 18px; }
+.photo .ph span:first-child { font-size: 30px; line-height: 1; }
+.photo-actions { display: flex; gap: 8px; margin-top: 8px; }
+.photo-actions .chip { font-size: 13px; }
+input[type="file"] { display: none; }
+
+/* Bottom bar */
+.bar {
+  position: fixed; inset-inline: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--line);
+}
+.primary {
+  width: 100%; height: 52px; border: 0; border-radius: 13px; background: var(--button); color: var(--button-text);
+  font: inherit; font-size: 17px; font-weight: 700; cursor: pointer;
+  transition: transform 100ms ease-out, opacity 150ms ease;
+}
+.primary[aria-disabled="true"] { opacity: 0.55; }
+.primary.busy { opacity: 0.7; }
+.ghost { margin-top: 12px; width: 100%; height: 46px; border: 0; border-radius: 12px; background: var(--chip); color: var(--text); font: inherit; cursor: pointer; }
+
+/* Press feedback on touch-down */
+.chip:active, .acc:active, .photo:active, .primary:active, .ghost:active { transform: scale(0.97); }
+
+.notice { margin: 14px 16px 0; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
+.notice.warn { background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.notice.err { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.notice .chip { margin-top: 10px; }
+
+.center { min-height: 70vh; display: grid; place-items: center; text-align: center; padding: 24px; }
+.center .big { font-size: 56px; line-height: 1; }
+.center h2 { margin: 12px 0 4px; font-size: 20px; }
+.center p { margin: 0; color: var(--hint); }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--chip); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.shake { animation: shake 300ms ease; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.toast {
+  position: fixed; inset-inline: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 5;
+  background: color-mix(in srgb, var(--text) 86%, transparent); color: var(--bg);
+  padding: 10px 14px; border-radius: 12px; font-size: 14px; text-align: center;
+  opacity: 0; transform: translateY(8px); transition: opacity 200ms ease, transform 200ms ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 1ms !important; animation: none !important; }
+  .chip:active, .acc:active, .photo:active, .primary:active, .ghost:active { transform: none; opacity: 0.7; }
+  .spinner { border-top-color: var(--accent); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .bar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+</style>
+</head>
+<body>
+<main id="app"><div class="center"><div class="spinner" aria-label="در حال بارگذاری"></div></div></main>
+<div class="bar" id="bar" hidden><button type="button" class="primary" id="submit">ثبت و ارسال</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="file" accept="image/*">
+
+<script>
+"use strict";
+const REPO = "abnbtceth-cmd/pasatrade-form";
+
+// ---------------------------------------------------------------- Telegram bridge (no external script)
+const hash = new URLSearchParams(location.hash.slice(1));
+let initData = hash.get("tgWebAppData") || "";
+try {
+  if (initData) sessionStorage.setItem("initData", initData);
+  else initData = sessionStorage.getItem("initData") || "";
+} catch (e) {}
+
+function postEvent(type, data) {
+  const json = JSON.stringify(data || {});
+  try {
+    if (window.TelegramWebviewProxy && window.TelegramWebviewProxy.postEvent) window.TelegramWebviewProxy.postEvent(type, json);
+    else if (window.external && "notify" in window.external) window.external.notify(JSON.stringify({ eventType: type, eventData: data || {} }));
+    else if (window.parent !== window) window.parent.postMessage(JSON.stringify({ eventType: type, eventData: data || {} }), "*");
+  } catch (e) {}
+}
+const haptic = {
+  tap: () => postEvent("web_app_trigger_haptic_feedback", { type: "impact", impact_style: "light" }),
+  select: () => postEvent("web_app_trigger_haptic_feedback", { type: "selection_change" }),
+  ok: () => postEvent("web_app_trigger_haptic_feedback", { type: "notification", notification_type: "success" }),
+  error: () => postEvent("web_app_trigger_haptic_feedback", { type: "notification", notification_type: "error" }),
+  warn: () => postEvent("web_app_trigger_haptic_feedback", { type: "notification", notification_type: "warning" }),
+};
+
+function applyTheme(theme) {
+  if (!theme) return;
+  const root = document.documentElement;
+  root.setAttribute("data-tg", "");
+  const map = { bg: theme.secondary_bg_color, section: theme.section_bg_color || theme.bg_color, text: theme.text_color,
+    hint: theme.hint_color, accent: theme.accent_text_color || theme.link_color, button: theme.button_color,
+    "button-text": theme.button_text_color, danger: theme.destructive_text_color };
+  for (const [k, v] of Object.entries(map)) if (v) root.style.setProperty("--" + k, v);
+}
+try { applyTheme(JSON.parse(hash.get("tgWebAppThemeParams") || "null")); } catch (e) {}
+window.Telegram = window.Telegram || {};
+window.Telegram.WebView = { receiveEvent(type, data) { if (type === "theme_changed" && data) applyTheme(data.theme_params); } };
+window.addEventListener("message", (e) => {
+  try { const m = JSON.parse(e.data); if (m.eventType === "theme_changed") applyTheme(m.eventData.theme_params); } catch (err) {}
+});
+postEvent("web_app_ready");
+postEvent("web_app_expand");
+postEvent("web_app_set_header_color", { color_key: "secondary_bg_color" });
+
+// ---------------------------------------------------------------- numbers (same rules as the bot)
+const toLatin = (s) => String(s).replace(/[۰-۹]/g, (d) => d.charCodeAt(0) - 0x06f0).replace(/[٠-٩]/g, (d) => d.charCodeAt(0) - 0x0660);
+const digitsOnly = (s) => toLatin(s).replace(/\D/g, "");
+const fa = (s) => String(s).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+const money = (rial) => Math.round(rial / 10).toLocaleString("en-US") + " تومان";
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+const ONES = ["", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه"];
+const TEENS = ["ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده", "نوزده"];
+const TENS = ["", "", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", "نود"];
+const HUNDREDS = ["", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد"];
+const SCALES = ["", "هزار", "میلیون", "میلیارد", "هزار میلیارد"];
+function under1000(n) {
+  const p = []; const h = Math.floor(n / 100); const r = n % 100;
+  if (h) p.push(HUNDREDS[h]);
+  if (r >= 10 && r < 20) p.push(TEENS[r - 10]); else { if (r >= 20) p.push(TENS[Math.floor(r / 10)]); if (r % 10) p.push(ONES[r % 10]); }
+  return p.join(" و ");
+}
+function words(rial) {
+  let n = Math.round(rial / 10); if (!n) return "";
+  const groups = [];
+  for (let s = 0; n > 0 && s < SCALES.length; s++) {
+    const g = n % 1000;
+    if (g) groups.unshift([s === 1 && g === 1 ? "" : under1000(g), SCALES[s]].filter(Boolean).join(" "));
+    n = Math.floor(n / 1000);
+  }
+  return groups.join(" و ") + " تومان";
+}
+function looseNumber(text, hasUnit) {
+  const parts = text.split(/[.,/]/);
+  if (parts.some((p) => !/^\d+$/.test(p))) return null;
+  if (parts.length === 1) return Number(parts[0]);
+  const grouped = parts.slice(1).every((p) => p.length === 3);
+  if (grouped && (parts.length > 2 || !hasUnit)) return Number(parts.join(""));
+  if (parts.length === 2) return Number(parts[0] + "." + parts[1]);
+  return null;
+}
+/** Possible meanings of what was typed, in rial. One = clear; two = ask; none = not a number. */
+function amountChoices(input) {
+  const text = toLatin(input).replace(/٫/g, ".").replace(/[٬،]/g, ",");
+  const m = text.match(/\d[\d.,/\s]*/); if (!m) return [];
+  const unit = /میلیارد/.test(text) ? 1e9 : /میلیون|ملیون/.test(text) ? 1e6 : /هزار/.test(text) ? 1e3 : 1;
+  const v = looseNumber(m[0].replace(/\s+/g, "").replace(/[.,/]+$/, ""), unit > 1);
+  if (!v || v <= 0) return [];
+  const rial = Math.round(/ریال/.test(text) ? v * unit : v * unit * 10);
+  if (unit > 1 || /ریال/.test(text)) return [rial];
+  const toman = rial / 10;
+  if (toman >= 100000) return [rial];
+  const billions = Math.round(toman * 1e9) * 10, millions = Math.round(toman * 1e6) * 10;
+  if (toman >= 1000) return [millions];
+  return toman < 10 ? [billions, millions] : [millions, billions];
+}
+
+const IBAN_BANKS = { "010":"بانک مرکزی","011":"صنعت و معدن","012":"ملت","013":"رفاه","014":"مسکن","015":"سپه","016":"کشاورزی","017":"ملی","018":"تجارت","019":"صادرات","020":"توسعه صادرات","021":"پست بانک","022":"توسعه تعاون","051":"موسسه اعتباری توسعه","053":"کارآفرین","054":"پارسیان","055":"اقتصاد نوین","056":"سامان","057":"پاسارگاد","058":"سرمایه","059":"سینا","060":"قرض‌الحسنه مهر ایران","061":"شهر","062":"آینده","064":"گردشگری","066":"دی","069":"ایران زمین","070":"قرض‌الحسنه رسالت","073":"کوثر","075":"ملل","078":"خاورمیانه","080":"نور","095":"ایران و ونزوئلا" };
+const CARD_BANKS = { "603799":"ملی","589210":"سپه","627648":"توسعه صادرات","207177":"توسعه صادرات","627961":"صنعت و معدن","603770":"کشاورزی","639217":"کشاورزی","628023":"مسکن","627760":"پست بانک","502908":"توسعه تعاون","627412":"اقتصاد نوین","622106":"پارسیان","639194":"پارسیان","627884":"پارسیان","502229":"پاسارگاد","639347":"پاسارگاد","627488":"کارآفرین","502910":"کارآفرین","621986":"سامان","639346":"سینا","639607":"سرمایه","502806":"شهر","504706":"شهر","502938":"دی","603769":"صادرات","610433":"ملت","991975":"ملت","627353":"تجارت","585983":"تجارت","589463":"رفاه","505785":"ایران زمین","636214":"آینده","606373":"قرض‌الحسنه مهر ایران","504172":"قرض‌الحسنه رسالت","505416":"گردشگری","507677":"نور","606256":"ملل","505809":"خاورمیانه","585947":"خاورمیانه" };
+function checkNumber(raw) {
+  const d = digitsOnly(raw);
+  if (!d) return { state: "empty" };
+  if (d.length === 16) {
+    let sum = 0;
+    for (let i = 0; i < 16; i++) { let x = +d[15 - i]; if (i % 2) { x *= 2; if (x > 9) x -= 9; } sum += x; }
+    return sum % 10 === 0 ? { state: "ok", type: "card", bank: CARD_BANKS[d.slice(0, 6)] || null }
+      : { state: "err", msg: "شماره کارت معتبر نیست. یک رقم را دوباره ببینید." };
+  }
+  if (d.length < 24) return { state: "typing", msg: "شبا ۲۴ رقم بعد از IR دارد. تا الان " + fa(d.length) + " رقم." };
+  if (d.length > 24) return { state: "err", msg: "شبا باید ۲۴ رقم بعد از IR داشته باشد، ولی " + fa(d.length) + " رقم دارد." };
+  let r = 0; for (const ch of d.slice(2) + "1827" + d.slice(0, 2)) r = (r * 10 + +ch) % 97;
+  return r === 1 ? { state: "ok", type: "iban", bank: IBAN_BANKS[d.slice(2, 5)] || null }
+    : { state: "err", msg: "رقم کنترل شبا درست نیست. احتمالاً یک رقم اشتباه تایپ شده است." };
+}
+function formatNumber(raw) {
+  const d = digitsOnly(raw);
+  if (d.length === 16 && !/ir/i.test(raw)) return d.replace(/(\d{4})(?=\d)/g, "$1-");
+  return d ? ("IR" + d).replace(/(.{4})(?=.)/g, "$1 ") : "";
+}
+
+// ---------------------------------------------------------------- API
+let API = null;
+const params = new URLSearchParams(location.search);
+const MOCK = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? params.get("mock") : null;
+
+async function loadApiBase() {
+  if (params.get("api") && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return params.get("api");
+  const sources = [
+    async () => (await (await fetch("https://raw.githubusercontent.com/" + REPO + "/main/config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
+    async () => JSON.parse(decodeURIComponent(escape(atob((await (await fetch("https://api.github.com/repos/" + REPO + "/contents/config.json", { cache: "no-store" })).json()).content.replace(/\s/g, ""))))).api,
+    async () => (await (await fetch("config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
+  ];
+  for (const s of sources) { try { const v = await s(); if (v) return v; } catch (e) {} }
+  return null;
+}
+async function call(path, body) {
+  const res = await fetch(API + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ initData, ...body }), signal: AbortSignal.timeout(20000) });
+  const json = await res.json().catch(() => ({ ok: false, error: "پاسخ سرور خوانده نشد." }));
+  if (!json.ok) throw Object.assign(new Error(json.error || "خطا"), { data: json, status: res.status });
+  return json;
+}
+
+// ---------------------------------------------------------------- state
+const app = document.getElementById("app");
+const bar = document.getElementById("bar");
+const submitBtn = document.getElementById("submit");
+const fileInput = document.getElementById("file");
+const S = {
+  session: null, kind: null,
+  number: "", holder: "", amountText: "", amountChoices: [], amount: null,
+  photo: null, photoUrl: null, hadPhoto: false,
+  requestId: null, other: false, date: null, dateOther: false,
+  busy: false, dirty: false, force: false, errors: {},
+};
+const $ = (id) => document.getElementById(id);
+function toast(text) { const t = $("toast"); t.textContent = text; t.classList.add("show"); clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show"), 2200); }
+function markDirty() { if (!S.dirty) { S.dirty = true; postEvent("web_app_setup_closing_behavior", { need_confirmation: true }); } }
+
+function showMessage(icon, title, text, closeLabel) {
+  bar.hidden = true;
+  app.innerHTML = '<div class="center"><div><div class="big">' + icon + "</div><h2>" + esc(title) + "</h2><p>" + esc(text) + "</p>" +
+    (closeLabel ? '<button type="button" class="ghost" id="close">' + esc(closeLabel) + "</button>" : "") + "</div></div>";
+  if (closeLabel) $("close").addEventListener("click", () => postEvent("web_app_close"));
+}
+
+// ---------------------------------------------------------------- rendering
+function selectedAccount() { return (S.session.accounts || []).find((a) => a.id === S.requestId) || null; }
+
+function renderAccountForm() {
+  const s = S.session;
+  return '<header><h1>' + (s.editing ? "اصلاح حساب #" + s.editing : "ثبت شماره حساب") + '</h1><p>' + esc(s.group) + "</p></header>" +
+    '<section class="section" id="sec-number"><label class="label" for="number"><span>شماره شبا یا کارت</span></label>' +
+    '<input type="text" id="number" class="num" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="IR00 0000 0000 0000 0000 0000 00">' +
+    '<div class="status" id="number-status">کل متن حساب را هم می‌توانید یک‌جا اینجا بچسبانید.</div></section>' +
+    '<section class="section" id="sec-holder"><label class="label" for="holder"><span>نام صاحب حساب</span></label>' +
+    '<input type="text" id="holder" autocomplete="off" placeholder="مثلاً فاطمه درستکار">' +
+    '<div class="chips" id="holder-hints"></div><div class="status" id="holder-status"></div></section>' +
+    amountSection("مبلغ (تومان)") +
+    '<section class="section" id="sec-photo"><div class="label"><span>عکس کارت یا حساب</span><span class="opt">اختیاری</span></div>' +
+    photoTile("📎", "افزودن عکس") + '<div class="status" id="photo-status"></div></section>';
+}
+
+function amountSection(label) {
+  return '<section class="section" id="sec-amount"><label class="label" for="amount"><span>' + label + "</span></label>" +
+    '<input type="text" id="amount" class="amount" dir="auto" inputmode="decimal" autocomplete="off" placeholder="مثلاً ۲ میلیارد یا 2,100,000,000">' +
+    '<div class="chips" id="amount-chips"></div><div class="preview" id="amount-preview"></div><div class="status" id="amount-status"></div></section>';
+}
+
+function photoTile(icon, text) {
+  return '<button type="button" class="photo" id="photo"><div class="ph"><span>' + icon + "</span><span>" + text + "</span></div></button>" +
+    '<div class="photo-actions" id="photo-actions" hidden><button type="button" class="chip accent" id="photo-change">عوض کردن عکس</button><button type="button" class="chip" id="photo-remove">برداشتن</button></div>';
+}
+
+function renderReceiptForm() {
+  const s = S.session;
+  const accounts = s.accounts || [];
+  let list = "";
+  for (const a of accounts) {
+    list += '<button type="button" class="acc" data-acc="' + a.id + '"><span class="dot"></span><span class="body">' +
+      '<div class="name">' + esc(a.holder || "#" + a.id) + "</div>" +
+      (a.number ? '<div class="meta ltr">' + esc(a.number) + "</div>" : "") +
+      (a.remainingRial != null ? '<div class="rem">مانده: ' + money(a.remainingRial) + "</div>" : "") +
+      "</span></button>";
+  }
+  list += '<button type="button" class="acc" data-acc="other"><span class="dot"></span><span class="body"><div class="name">حساب دیگر</div><div class="meta">نام صاحب حساب را خودتان بنویسید</div></span></button>';
+  const dates = s.dates.map((d, i) => '<button type="button" class="chip" data-date="' + d.value + '">' + d.label + " " + fa(d.value.slice(5)) + "</button>").join("") +
+    '<button type="button" class="chip" data-date="other">تاریخ دیگر</button>';
+  return '<header><h1>' + (s.editing ? "اصلاح فیش #" + s.editing : "ثبت فیش") + '</h1><p>' + esc(s.group) + "</p></header>" +
+    '<section class="section" id="sec-photo"><div class="label"><span>عکس فیش</span></div>' + photoTile("📷", "انتخاب عکس فیش") +
+    '<div class="status" id="photo-status"></div><div id="dup"></div></section>' +
+    '<section class="section" id="sec-account"><div class="label"><span>به حساب</span></div><div class="accounts">' + list + "</div>" +
+    '<div class="other-name" id="other-wrap" hidden><input type="text" id="holder" autocomplete="off" placeholder="نام صاحب حساب"></div>' +
+    '<div class="status" id="account-status"></div></section>' +
+    amountSection("مبلغ فیش (تومان)") +
+    '<section class="section" id="sec-date"><div class="label"><span>تاریخ فیش</span></div><div class="chips" id="dates">' + dates + "</div>" +
+    '<div class="other-name" id="date-wrap" hidden><input type="text" id="date-input" class="num" inputmode="numeric" autocomplete="off" placeholder="۱۴۰۵/۰۷/۲۱"></div>' +
+    '<div class="status" id="date-status"></div></section>';
+}
+
+function updatePhoto() {
+  const tile = $("photo"), actions = $("photo-actions");
+  if (S.photoUrl) {
+    tile.classList.add("has"); tile.innerHTML = '<img alt="عکس انتخاب‌شده" src="' + S.photoUrl + '">'; actions.hidden = false;
+    $("photo-remove").hidden = S.kind === "receipt";
+  } else if (S.hadPhoto) {
+    tile.classList.remove("has"); tile.innerHTML = '<div class="ph"><span>✅</span><span>عکس قبلی ثبت شده است. برای عوض کردن بزنید.</span></div>'; actions.hidden = true;
+  } else {
+    tile.classList.remove("has");
+    tile.innerHTML = S.kind === "receipt" ? '<div class="ph"><span>📷</span><span>انتخاب عکس فیش</span></div>' : '<div class="ph"><span>📎</span><span>افزودن عکس</span></div>';
+    actions.hidden = true;
+  }
+}
+
+function updateNumber() {
+  const c = checkNumber(S.number), st = $("number-status");
+  st.className = "status";
+  if (c.state === "ok") { st.classList.add("ok"); st.textContent = "✓ " + (c.type === "card" ? "کارت" : "شبا") + (c.bank ? " · بانک " + c.bank : "") ; }
+  else if (c.state === "err") { st.classList.add("err"); st.textContent = c.msg; }
+  else if (c.state === "typing") { st.textContent = c.msg; }
+  else st.textContent = S.photoUrl || S.hadPhoto ? "اگر شبا ندارید، همان عکس کافی است." : "کل متن حساب را هم می‌توانید یک‌جا اینجا بچسبانید.";
+  if (S.errors.number) { st.className = "status err"; st.textContent = S.errors.number; }
+}
+
+let hintTimer = null;
+function loadHints() {
+  clearTimeout(hintTimer);
+  const box = $("holder-hints"); if (!box) return;
+  const c = checkNumber(S.number);
+  if (c.state !== "ok") { box.innerHTML = ""; return; }
+  hintTimer = setTimeout(async () => {
+    try {
+      const r = MOCK ? { holders: ["فاطمه درستکار"] } : await call("/api/hints", { number: digitsOnly(S.number) });
+      box.innerHTML = r.holders.filter((h) => h !== S.holder).map((h) => '<button type="button" class="chip accent" data-hint="' + esc(h) + '">👤 ' + esc(h) + "</button>").join("");
+    } catch (e) {}
+  }, 250);
+}
+
+function updateAmount() {
+  const chips = $("amount-chips"), pv = $("amount-preview"), st = $("amount-status");
+  chips.innerHTML = ""; pv.innerHTML = ""; st.className = "status"; st.textContent = "";
+  const acc = S.kind === "receipt" ? selectedAccount() : null;
+  if (acc && acc.remainingRial > 0) {
+    chips.innerHTML = '<button type="button" class="chip accent' + (S.amount === acc.remainingRial ? " on" : "") + '" data-amount="' + acc.remainingRial + '">کل مانده: ' + money(acc.remainingRial) + "</button>";
+  }
+  if (S.amountChoices.length > 1) {
+    chips.innerHTML += S.amountChoices.map((v) => '<button type="button" class="chip' + (S.amount === v ? " on" : "") + '" data-amount="' + v + '">' + money(v) + "</button>").join("");
+    if (S.amount == null) { st.textContent = "منظورتان کدام است؟"; }
+  }
+  if (S.amount) {
+    pv.innerHTML = "<b>" + money(S.amount) + '</b><div class="words">' + words(S.amount) + "</div>";
+    if (acc && acc.remainingRial != null) {
+      const editingSame = S.session.editing && S.session.prefill && S.session.prefill.requestId === acc.id ? (S.session.prefill.amountRial || 0) : 0;
+      const after = acc.remainingRial + editingSame - S.amount;
+      st.className = "status " + (after < 0 ? "warn" : "");
+      st.innerHTML = after < 0 ? "⚠️ این مبلغ " + money(-after) + " بیشتر از ماندهٔ حساب است." : "بعد از این فیش، مانده: " + money(after);
+    }
+  } else if (S.amountText && !S.amountChoices.length) {
+    st.className = "status err"; st.textContent = "مبلغ را نفهمیدم. مثل «۲ میلیارد» یا «2,100,000,000» بنویسید.";
+  }
+  if (S.errors.amount) { st.className = "status err"; st.textContent = S.errors.amount; }
+}
+
+function updateAccounts() {
+  document.querySelectorAll("[data-acc]").forEach((b) => {
+    const on = b.dataset.acc === "other" ? S.other : Number(b.dataset.acc) === S.requestId;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  $("other-wrap").hidden = !S.other;
+  const st = $("account-status"); st.className = "status"; st.textContent = "";
+  if (S.errors.account) { st.className = "status err"; st.textContent = S.errors.account; }
+}
+
+function updateDates() {
+  document.querySelectorAll("[data-date]").forEach((b) => b.classList.toggle("on", b.dataset.date === "other" ? S.dateOther : !S.dateOther && b.dataset.date === S.date));
+  $("date-wrap").hidden = !S.dateOther;
+  const st = $("date-status"); st.className = "status"; st.textContent = "";
+  if (S.dateOther && S.date) st.textContent = "تاریخ: " + fa(S.date);
+  if (S.errors.jdate) { st.className = "status err"; st.textContent = S.errors.jdate; }
+}
+
+function valid() {
+  if (S.kind === "account") {
+    const c = checkNumber(S.number);
+    const numberOk = c.state === "ok" || (c.state === "empty" && (S.photo || S.hadPhoto));
+    return numberOk && S.holder.trim().length > 1 && S.amount > 0;
+  }
+  return (S.photo || S.hadPhoto) && (S.requestId || (S.other && S.holder.trim().length > 1)) && S.amount > 0 && !!S.date;
+}
+function updateSubmit() {
+  submitBtn.setAttribute("aria-disabled", valid() ? "false" : "true");
+  submitBtn.textContent = S.busy ? "در حال ثبت…" : S.session.editing ? "ثبت اصلاح" : "ثبت و ارسال";
+  submitBtn.classList.toggle("busy", S.busy);
+}
+function updateAll() {
+  if (S.kind === "account") { updateNumber(); } else { updateAccounts(); updateDates(); }
+  updatePhoto(); updateAmount(); updateSubmit();
+  const ps = $("photo-status"); ps.className = "status"; ps.textContent = "";
+  if (S.errors.photo) { ps.className = "status err"; ps.textContent = S.errors.photo; }
+}
+
+// ---------------------------------------------------------------- events
+function setAmountText(text) {
+  S.amountText = text; S.amountChoices = amountChoices(text);
+  S.amount = S.amountChoices.length === 1 ? S.amountChoices[0] : null;
+  delete S.errors.amount;
+}
+
+async function pickPhoto(file) {
+  if (!file || !/^image\//.test(file.type)) { toast("فقط عکس می‌شود انتخاب کرد."); return; }
+  try {
+    S.photo = await shrink(file);
+  } catch (e) { S.photo = file; }
+  if (S.photoUrl) URL.revokeObjectURL(S.photoUrl);
+  S.photoUrl = URL.createObjectURL(S.photo);
+  S.force = false; $("dup") && ($("dup").innerHTML = "");
+  delete S.errors.photo; markDirty(); haptic.select(); updateAll();
+}
+
+/** Big phone photos are scaled down before upload: faster through the tunnel, same readability. */
+async function shrink(file) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const max = 2000, scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  if (scale === 1 && file.size < 1.5e6) return file;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return await new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("blob"))), "image/jpeg", 0.88));
+}
+
+function bind() {
+  app.addEventListener("click", (e) => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.id === "photo" || t.id === "photo-change") { fileInput.click(); return; }
+    if (t.id === "photo-remove") { if (S.photoUrl) URL.revokeObjectURL(S.photoUrl); S.photo = null; S.photoUrl = null; haptic.select(); updateAll(); return; }
+    if (t.dataset.hint) { S.holder = t.dataset.hint; $("holder").value = S.holder; t.remove(); haptic.select(); markDirty(); updateSubmit(); return; }
+    if (t.dataset.amount) { S.amount = Number(t.dataset.amount); delete S.errors.amount; haptic.select(); markDirty(); updateAll(); return; }
+    if (t.dataset.acc) {
+      if (t.dataset.acc === "other") { S.other = true; S.requestId = null; setTimeout(() => $("holder").focus(), 50); }
+      else { S.other = false; S.requestId = Number(t.dataset.acc); }
+      delete S.errors.account; haptic.select(); markDirty(); updateAll(); return;
+    }
+    if (t.dataset.date) {
+      if (t.dataset.date === "other") { S.dateOther = true; S.date = null; setTimeout(() => $("date-input").focus(), 50); }
+      else { S.dateOther = false; S.date = t.dataset.date; }
+      delete S.errors.jdate; haptic.select(); updateAll(); return;
+    }
+    if (t.id === "force") { S.force = true; $("dup").innerHTML = ""; haptic.tap(); submit(); }
+  });
+  app.addEventListener("input", (e) => {
+    const t = e.target; markDirty();
+    if (t.id === "number") { S.number = t.value; delete S.errors.number; updateNumber(); loadHints(); updateSubmit(); }
+    if (t.id === "holder") { S.holder = t.value; delete S.errors.holder; delete S.errors.account; updateSubmit(); }
+    if (t.id === "amount") { setAmountText(t.value); updateAmount(); updateSubmit(); }
+    if (t.id === "date-input") { const d = parseDate(t.value); S.date = d; delete S.errors.jdate; updateDates(); updateSubmit(); }
+  });
+  app.addEventListener("focusout", (e) => {
+    if (e.target.id === "number" && checkNumber(S.number).state === "ok") { e.target.value = formatNumber(S.number); S.number = e.target.value; }
+  });
+  app.addEventListener("paste", async (e) => {
+    if (e.target.id !== "number") return;
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (!/[؀-ۿ]/.test(text) && !/\n/.test(text)) return; // just a number
+    e.preventDefault();
+    try {
+      const p = MOCK ? { number: "IR720600000000012345678901", holder: "مریم نمونه", amountRial: 21000000000 } : await call("/api/parse", { text });
+      if (p.number) { S.number = formatNumber(p.number); $("number").value = S.number; }
+      if (p.holder && !S.holder) { S.holder = p.holder; $("holder").value = p.holder; }
+      if (p.amountRial && !S.amount) { S.amountText = Math.round(p.amountRial / 10).toLocaleString("en-US"); $("amount").value = S.amountText; S.amountChoices = [p.amountRial]; S.amount = p.amountRial; }
+      markDirty(); haptic.ok(); toast("متن حساب جدا شد. یک بار نگاه کنید.");
+      updateAll(); loadHints();
+    } catch (err) { $("number").value = text; S.number = text; updateNumber(); }
+  });
+  fileInput.addEventListener("change", () => { const f = fileInput.files && fileInput.files[0]; fileInput.value = ""; if (f) pickPhoto(f); });
+  submitBtn.addEventListener("click", () => submit());
+}
+
+function parseDate(text) {
+  const m = toLatin(text).match(/(\d{2,4})\s*[/\-.]\s*(\d{1,2})\s*[/\-.]\s*(\d{1,2})/);
+  if (!m) return null;
+  let y = +m[1]; const mo = +m[2], d = +m[3];
+  if (y < 100) y += 1400;
+  if (y < 1300 || y > 1500 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return y + "/" + String(mo).padStart(2, "0") + "/" + String(d).padStart(2, "0");
+}
+
+function showErrors() {
+  S.errors = {};
+  if (S.kind === "account") {
+    const c = checkNumber(S.number);
+    if (c.state === "err") S.errors.number = c.msg;
+    else if (c.state === "typing") S.errors.number = c.msg;
+    else if (c.state === "empty" && !S.photo && !S.hadPhoto) S.errors.number = "شماره شبا یا کارت را بنویسید، یا عکس حساب را بگذارید.";
+    if (S.holder.trim().length < 2) S.errors.holder = "نام صاحب حساب را بنویسید.";
+  } else {
+    if (!S.photo && !S.hadPhoto) S.errors.photo = "عکس فیش را انتخاب کنید.";
+    if (!S.requestId && !(S.other && S.holder.trim().length > 1)) S.errors.account = "حساب را انتخاب کنید یا نام صاحب حساب را بنویسید.";
+    if (!S.date) S.errors.jdate = "تاریخ فیش را انتخاب کنید.";
+  }
+  if (!S.amount) S.errors.amount = S.amountChoices.length > 1 ? "یکی از مبلغ‌ها را انتخاب کنید." : "مبلغ را بنویسید.";
+  if (S.errors.holder) { const st = $("holder-status"); if (st) { st.className = "status err"; st.textContent = S.errors.holder; } }
+  updateAll();
+  const order = ["photo", "number", "account", "holder", "amount", "jdate"];
+  const first = order.find((k) => S.errors[k]);
+  const sec = { photo: "sec-photo", number: "sec-number", account: "sec-account", holder: S.kind === "account" ? "sec-holder" : "sec-account", amount: "sec-amount", jdate: "sec-date" }[first];
+  const el = sec && $(sec);
+  if (el) { el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" }); el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+}
+
+async function submit() {
+  if (S.busy) return;
+  if (!valid()) { haptic.error(); showErrors(); return; }
+  S.busy = true; haptic.tap(); updateSubmit();
+  const fd = new FormData();
+  fd.append("initData", initData);
+  fd.append("amount_rial", String(S.amount));
+  if (S.kind === "account") { fd.append("number", digitsOnly(S.number)); fd.append("holder", S.holder.trim()); }
+  else { fd.append("request_id", S.requestId ? String(S.requestId) : ""); fd.append("holder", S.other ? S.holder.trim() : ""); fd.append("jdate", S.date); }
+  if (S.photo) fd.append("photo", S.photo, "photo.jpg");
+  if (S.force) fd.append("force", "1");
+  try {
+    let json, status = 200;
+    if (MOCK) { await new Promise((r) => setTimeout(r, 600)); json = { ok: true, id: 1 }; }
+    else {
+      const res = await fetch(API + "/api/submit", { method: "POST", body: fd, signal: AbortSignal.timeout(60000) });
+      status = res.status; json = await res.json().catch(() => ({ ok: false, error: "پاسخ سرور خوانده نشد." }));
+    }
+    if (json.ok) {
+      haptic.ok(); postEvent("web_app_setup_closing_behavior", { need_confirmation: false });
+      showMessage("✅", S.session.editing ? "اصلاح ثبت شد" : "ثبت شد", "کارت آن در گروه آمد.", null);
+      setTimeout(() => postEvent("web_app_close"), 1200);
+      return;
+    }
+    S.busy = false; updateSubmit();
+    if (status === 409 && json.dup) {
+      haptic.warn();
+      $("dup").innerHTML = '<div class="notice warn">' + esc(json.error) + '<br><button type="button" class="chip" id="force">ثبت با همین عکس</button></div>';
+      $("sec-photo").scrollIntoView({ block: "center" });
+      return;
+    }
+    haptic.error();
+    if (json.field) {
+      S.errors = { [json.field]: json.error };
+      if (json.field === "holder") { const st = $("holder-status"); if (st) { st.className = "status err"; st.textContent = json.error; } }
+      updateAll();
+      const sec = $("sec-" + (json.field === "jdate" ? "date" : json.field));
+      if (sec) sec.scrollIntoView({ block: "center" });
+    } else toast(json.error || "ثبت نشد. دوباره امتحان کنید.");
+  } catch (e) {
+    S.busy = false; updateSubmit(); haptic.error();
+    toast("اتصال برقرار نشد. اینترنت را چک کنید و دوباره بزنید.");
+  }
+}
+
+// ---------------------------------------------------------------- start
+function mockSession(kind) {
+  const dates = ["امروز", "دیروز", "پریروز"].map((label, i) => ({ label, value: "1405/07/" + String(27 - i).padStart(2, "0") }));
+  return kind === "receipt"
+    ? { ok: true, kind, editing: null, group: "گروه حسابداری نمونه", user: "علی", dates, prefill: { requestId: 12 },
+        accounts: [{ id: 12, holder: "فاطمه درستکار", number: "IR72 0600 0000 0001 2345 6789 01", amountRial: 30000000000, remainingRial: 25000000000, mine: true },
+                   { id: 9, holder: "شرکت نمونه", number: "6219-8611-1122-2237", amountRial: 17000000000, remainingRial: 17000000000, mine: false }] }
+    : { ok: true, kind: "account", editing: null, group: "گروه حسابداری نمونه", user: "علی", dates, prefill: null };
+}
+
+async function start() {
+  if (!MOCK && !initData) { showMessage("📱", "این فرم را از داخل تلگرام باز کنید", "روی دکمهٔ فرم در گروه حسابداری بزنید."); return; }
+  try {
+    if (!MOCK) {
+      API = await loadApiBase();
+      if (!API) throw new Error("آدرس سرور پیدا نشد. چند دقیقهٔ دیگر دوباره امتحان کنید.");
+    }
+    const s = MOCK ? mockSession(MOCK) : await call("/api/session", {});
+    S.session = s; S.kind = s.kind;
+    app.innerHTML = s.kind === "account" ? renderAccountForm() : renderReceiptForm();
+    const p = s.prefill || {};
+    if (s.kind === "account" && s.prefill) {
+      S.number = p.number ? formatNumber(p.number) : ""; $("number").value = S.number;
+      S.holder = p.holder || ""; $("holder").value = S.holder;
+      S.hadPhoto = !!p.hasPhoto;
+    }
+    if (s.kind === "receipt") {
+      S.requestId = p.requestId || null;
+      if (!S.requestId && p.holder) { S.other = true; S.holder = p.holder; $("holder").value = p.holder; }
+      S.hadPhoto = !!p.hasPhoto;
+      S.date = p.jdate || s.dates[0].value;
+      S.dateOther = !!p.jdate && !s.dates.some((d) => d.value === p.jdate);
+      if (S.dateOther) $("date-input").value = fa(p.jdate);
+    }
+    if (p.amountRial) { S.amountText = Math.round(p.amountRial / 10).toLocaleString("en-US"); $("amount").value = S.amountText; S.amountChoices = [p.amountRial]; S.amount = p.amountRial; }
+    bar.hidden = false;
+    bind(); updateAll();
+  } catch (e) {
+    const msg = e && e.message ? e.message : "مشکلی پیش آمد.";
+    showMessage("⚠️", "فرم باز نشد", msg, "بستن");
+  }
+}
+start();
+</script>
+</body>
+</html>
