@@ -283,24 +283,29 @@ const MOCK = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? params.get("
 
 async function loadApiBase() {
   if (params.get("api") && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return params.get("api");
+  // The API address changes whenever the tunnel reconnects. api.github.com is fresh within a minute;
+  // raw.githubusercontent.com can lag about five minutes, so it is only a fallback.
   const sources = [
-    async () => (await (await fetch("https://raw.githubusercontent.com/" + REPO + "/config/config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
     async () => JSON.parse(decodeURIComponent(escape(atob((await (await fetch("https://api.github.com/repos/" + REPO + "/contents/config.json?ref=config", { cache: "no-store" })).json()).content.replace(/\s/g, ""))))).api,
-    async () => (await (await fetch("config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
+    async () => (await (await fetch("https://raw.githubusercontent.com/" + REPO + "/config/config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
   ];
   for (const s of sources) { try { const v = await s(); if (v) return v; } catch (e) {} }
   return null;
 }
 /** fetch to the API; if the server cannot be reached, look up its address again once (the tunnel may have moved). */
 async function apiFetch(path, init) {
+  let res = null;
   try {
-    return await fetch(API + path, init());
-  } catch (e) {
-    const fresh = await loadApiBase();
-    if (!fresh || fresh === API) throw e;
+    res = await fetch(API + path, init());
+    if (res.status < 502) return res; // 502-504 come from the tunnel when the bot moved to a new address
+  } catch (e) {}
+  const fresh = await loadApiBase();
+  if (fresh && fresh !== API) {
     API = fresh;
     return await fetch(API + path, init());
   }
+  if (res) return res;
+  throw new Error("network");
 }
 async function call(path, body) {
   const res = await apiFetch(path, () => ({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ initData, ...body }), signal: AbortSignal.timeout(20000) }));
