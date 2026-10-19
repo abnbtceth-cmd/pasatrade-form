@@ -284,15 +284,26 @@ const MOCK = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? params.get("
 async function loadApiBase() {
   if (params.get("api") && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return params.get("api");
   const sources = [
-    async () => (await (await fetch("https://raw.githubusercontent.com/" + REPO + "/main/config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
-    async () => JSON.parse(decodeURIComponent(escape(atob((await (await fetch("https://api.github.com/repos/" + REPO + "/contents/config.json", { cache: "no-store" })).json()).content.replace(/\s/g, ""))))).api,
+    async () => (await (await fetch("https://raw.githubusercontent.com/" + REPO + "/config/config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
+    async () => JSON.parse(decodeURIComponent(escape(atob((await (await fetch("https://api.github.com/repos/" + REPO + "/contents/config.json?ref=config", { cache: "no-store" })).json()).content.replace(/\s/g, ""))))).api,
     async () => (await (await fetch("config.json?t=" + Date.now(), { cache: "no-store" })).json()).api,
   ];
   for (const s of sources) { try { const v = await s(); if (v) return v; } catch (e) {} }
   return null;
 }
+/** fetch to the API; if the server cannot be reached, look up its address again once (the tunnel may have moved). */
+async function apiFetch(path, init) {
+  try {
+    return await fetch(API + path, init());
+  } catch (e) {
+    const fresh = await loadApiBase();
+    if (!fresh || fresh === API) throw e;
+    API = fresh;
+    return await fetch(API + path, init());
+  }
+}
 async function call(path, body) {
-  const res = await fetch(API + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ initData, ...body }), signal: AbortSignal.timeout(20000) });
+  const res = await apiFetch(path, () => ({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ initData, ...body }), signal: AbortSignal.timeout(20000) }));
   const json = await res.json().catch(() => ({ ok: false, error: "پاسخ سرور خوانده نشد." }));
   if (!json.ok) throw Object.assign(new Error(json.error || "خطا"), { data: json, status: res.status });
   return json;
@@ -599,7 +610,7 @@ async function submit() {
     let json, status = 200;
     if (MOCK) { await new Promise((r) => setTimeout(r, 600)); json = { ok: true, id: 1 }; }
     else {
-      const res = await fetch(API + "/api/submit", { method: "POST", body: fd, signal: AbortSignal.timeout(60000) });
+      const res = await apiFetch("/api/submit", () => ({ method: "POST", body: fd, signal: AbortSignal.timeout(60000) }));
       status = res.status; json = await res.json().catch(() => ({ ok: false, error: "پاسخ سرور خوانده نشد." }));
     }
     if (json.ok) {
